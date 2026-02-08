@@ -182,12 +182,47 @@ def show_monthly_chart(data):
     months = list(data.keys())
     totals = list(data.values())
 
-    plt.figure()
-    plt.bar(months, totals)
-    plt.xlabel("Month")
-    plt.ylabel("Total Expense")
-    plt.title("Monthly Expense Summary")
+    # create figure with a friendly size
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    # use a qualitative colormap to get distinct colors per bar
+    cmap = plt.get_cmap("tab20")
+    colors = [cmap(i % cmap.N) for i in range(len(months))]
+
+    bars = ax.bar(months, totals, color=colors)
+
+    # labels and title
+    ax.set_xlabel("Month")
+    ax.set_ylabel("Total Expense (₹)")
+    ax.set_title("Monthly Expense Summary")
+
+    # rotate x labels for readability
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
+
+    # add grid for easier comparison
+    ax.yaxis.grid(True, linestyle="--", alpha=0.5)
+
+    # annotate bars with values
+    for bar, value in zip(bars, totals):
+        height = bar.get_height()
+        ax.annotate(f"₹{height:.2f}",
+                    xy=(bar.get_x() + bar.get_width() / 2, height),
+                    xytext=(0, 4),
+                    textcoords="offset points",
+                    ha="center",
+                    va="bottom",
+                    fontsize=8)
+
     plt.tight_layout()
+
+    # attempt to save a copy next to the data file for quick preview
+    try:
+        out_path = DATA_FILE.parent / "monthly_summary.png"
+        fig.savefig(out_path, dpi=150)
+        print(f"Saved chart to: {out_path}")
+    except Exception:
+        pass
+
     plt.show()
 
 
