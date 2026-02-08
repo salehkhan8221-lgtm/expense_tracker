@@ -45,36 +45,74 @@ class ExpenseTrackerGUI:
         )
         header_label.pack(pady=15)
         
+        # Month Selection Frame
+        month_frame = ttk.LabelFrame(self.root, text="Select Month to View", padding=10)
+        month_frame.pack(fill=tk.X, padx=15, pady=5)
+        
+        ttk.Label(month_frame, text="Month:").grid(row=0, column=0, sticky=tk.W, padx=5)
+        self.month_var = tk.StringVar()
+        month_combo = ttk.Combobox(
+            month_frame,
+            textvariable=self.month_var,
+            values=["All Months", "January", "February", "March", "April", "May", "June",
+                   "July", "August", "September", "October", "November", "December"],
+            state="readonly",
+            width=15
+        )
+        month_combo.set("All Months")
+        month_combo.grid(row=0, column=1, sticky=tk.W, padx=5)
+        month_combo.bind("<<ComboboxSelected>>", lambda e: self.load_expenses())
+        
+        ttk.Label(month_frame, text="Year:").grid(row=0, column=2, sticky=tk.W, padx=5)
+        self.year_var = tk.StringVar()
+        year_combo = ttk.Combobox(
+            month_frame,
+            textvariable=self.year_var,
+            values=list(map(str, range(2024, 2031))),
+            state="readonly",
+            width=10
+        )
+        year_combo.set(str(datetime.now().year))
+        year_combo.grid(row=0, column=3, sticky=tk.W, padx=5)
+        year_combo.bind("<<ComboboxSelected>>", lambda e: self.load_expenses())
+        
         # Input Section
         input_frame = ttk.LabelFrame(self.root, text="Add New Expense", padding=20)
         input_frame.pack(fill=tk.X, padx=15, pady=10)
         
+        # Date Selection
+        ttk.Label(input_frame, text="Date (YYYY-MM-DD):").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.date_var = tk.StringVar()
+        self.date_var.set(datetime.now().strftime("%Y-%m-%d"))
+        date_entry = ttk.Entry(input_frame, textvariable=self.date_var, width=15)
+        date_entry.grid(row=0, column=1, sticky=tk.W, padx=10, pady=5)
+        
         # Amount
-        ttk.Label(input_frame, text="Amount (₹):").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(input_frame, text="Amount (₹):").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.amount_var = tk.StringVar()
         amount_entry = ttk.Entry(input_frame, textvariable=self.amount_var, width=15)
-        amount_entry.grid(row=0, column=1, sticky=tk.W, padx=10, pady=5)
+        amount_entry.grid(row=1, column=1, sticky=tk.W, padx=10, pady=5)
         
         # Category
-        ttk.Label(input_frame, text="Category:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(input_frame, text="Category:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.category_var = tk.StringVar()
         category_combo = ttk.Combobox(
             input_frame,
             textvariable=self.category_var,
-            values=["Food", "Transport", "Groceries", "Entertainment", "Utilities", "Other"],
+            values=["Food", "Transport", "Groceries", "Entertainment", "Utilities", "Healthcare", "Other"],
             width=13
         )
-        category_combo.grid(row=1, column=1, sticky=tk.W, padx=10, pady=5)
+        category_combo.grid(row=2, column=1, sticky=tk.W, padx=10, pady=5)
         
         # Note
-        ttk.Label(input_frame, text="Note (optional):").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(input_frame, text="Note (optional):").grid(row=3, column=0, sticky=tk.W, pady=5)
         self.note_var = tk.StringVar()
         note_entry = ttk.Entry(input_frame, textvariable=self.note_var, width=30)
-        note_entry.grid(row=2, column=1, columnspan=2, sticky=tk.EW, padx=10, pady=5)
+        note_entry.grid(row=3, column=1, columnspan=2, sticky=tk.EW, padx=10, pady=5)
         
         # Add Button
         add_button = ttk.Button(input_frame, text="➕ Add Expense", command=self.add_expense)
-        add_button.grid(row=3, column=0, columnspan=2, sticky=tk.EW, pady=15)
+        add_button.grid(row=4, column=0, columnspan=2, sticky=tk.EW, pady=15)
         
         # Expenses List Section
         list_frame = ttk.LabelFrame(self.root, text="Your Expenses", padding=10)
@@ -116,7 +154,8 @@ class ExpenseTrackerGUI:
         summary_frame = tk.Frame(self.root, bg="#ecf0f1")
         summary_frame.pack(fill=tk.X, padx=15, pady=10)
         
-        ttk.Label(summary_frame, text="Total Expense:", font=("Arial", 12, "bold")).pack(side=tk.LEFT, padx=10)
+        self.summary_label = ttk.Label(summary_frame, text="Total (All Months):", font=("Arial", 12, "bold"))
+        self.summary_label.pack(side=tk.LEFT, padx=10)
         self.total_label = ttk.Label(summary_frame, text="₹0.00", font=("Arial", 12, "bold"), foreground="green")
         self.total_label.pack(side=tk.LEFT, padx=5)
         
@@ -136,11 +175,19 @@ class ExpenseTrackerGUI:
     def add_expense(self):
         """Add a new expense."""
         try:
+            date_str = self.date_var.get().strip()
             amount_str = self.amount_var.get().strip()
             category = self.category_var.get().strip()
             note = self.note_var.get().strip()
             
-            # Validation
+            # Validation - Date
+            try:
+                datetime.strptime(date_str, "%Y-%m-%d")
+            except ValueError:
+                messagebox.showerror("Error", "❌ Invalid date format. Use YYYY-MM-DD (e.g., 2026-02-09)")
+                return
+            
+            # Validation - Amount
             if not amount_str:
                 messagebox.showerror("Error", "❌ Please enter an amount.")
                 return
@@ -158,8 +205,8 @@ class ExpenseTrackerGUI:
                 messagebox.showerror("Error", "❌ Please select a category.")
                 return
             
-            # Get timestamp
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+            # Format timestamp with date
+            timestamp = f"{date_str} {datetime.now().strftime('%H:%M')}"
             
             # Write to CSV
             file_exists = DATA_FILE.exists()
@@ -173,6 +220,7 @@ class ExpenseTrackerGUI:
             self.amount_var.set("")
             self.category_var.set("")
             self.note_var.set("")
+            self.date_var.set(datetime.now().strftime("%Y-%m-%d"))
             
             messagebox.showinfo("Success", "✅ Expense added successfully!")
             self.load_expenses()
@@ -181,7 +229,7 @@ class ExpenseTrackerGUI:
             messagebox.showerror("Error", f"❌ Error: {e}")
     
     def load_expenses(self):
-        """Load and display all expenses."""
+        """Load and display expenses filtered by selected month."""
         # Clear tree
         for item in self.tree.get_children():
             self.tree.delete(item)
@@ -189,6 +237,17 @@ class ExpenseTrackerGUI:
         if not DATA_FILE.exists():
             self.total_label.config(text="₹0.00")
             return
+        
+        # Get selected month and year
+        selected_month = self.month_var.get()
+        selected_year = self.year_var.get()
+        
+        # Month mapping
+        months = {
+            "January": "01", "February": "02", "March": "03", "April": "04",
+            "May": "05", "June": "06", "July": "07", "August": "08",
+            "September": "09", "October": "10", "November": "11", "December": "12"
+        }
         
         total = 0.0
         try:
@@ -201,11 +260,22 @@ class ExpenseTrackerGUI:
                         category = row.get("category", "")
                         note = row.get("note", "")
                         
+                        # Filter by month and year
+                        if selected_month != "All Months":
+                            month_num = months[selected_month]
+                            if not timestamp.startswith(f"{selected_year}-{month_num}"):
+                                continue
+                        elif selected_year and not timestamp.startswith(selected_year):
+                            continue
+                        
                         total += amount
                         self.tree.insert("", tk.END, values=(timestamp, f"₹{amount:.2f}", category, note))
-                    except ValueError:
+                    except (ValueError, KeyError):
                         continue
             
+            # Update summary with month/year info
+            summary_text = f"Total ({selected_month if selected_month != 'All Months' else f'Year {selected_year}'}):"
+            self.summary_label.config(text=summary_text)
             self.total_label.config(text=f"₹{total:.2f}")
         
         except Exception as e:
