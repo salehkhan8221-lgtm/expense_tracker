@@ -1,6 +1,10 @@
 import csv
 from pathlib import Path
 from datetime import datetime
+import matplotlib.pyplot as plt
+from collections import defaultdict
+
+
 
 DATA_FILE = Path(__file__).parent / "expenses.csv"
 
@@ -10,7 +14,10 @@ def show_menu():
     print("1. Add Expense")
     print("2. View Expenses")
     print("3. Total Expense")
-    print("4. Exit")
+    print("4. Delete Expense")
+    print("5. Edit Expense")
+    print("6. Monthly Summary")
+    print("7. Exit")
 
 
 def get_valid_amount():
@@ -142,6 +149,47 @@ def edit_expense():
     except:
         print("Invalid choice")
 
+def monthly_summary():
+    if not DATA_FILE.exists():
+        print("No expenses found.")
+        return
+
+    monthly_totals = defaultdict(float)
+
+    with open(DATA_FILE, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            try:
+                date = datetime.fromisoformat(row["timestamp"])
+                month = date.strftime("%Y-%m")  # e.g. 2026-02
+                amount = float(row["amount"])
+                monthly_totals[month] += amount
+            except:
+                continue
+
+    if not monthly_totals:
+        print("No valid data found.")
+        return
+
+    print("\n--- Monthly Expense Report ---")
+    for month, total in monthly_totals.items():
+        print(f"{month} : ₹{total:.2f}")
+
+    show_monthly_chart(monthly_totals)
+
+
+def show_monthly_chart(data):
+    months = list(data.keys())
+    totals = list(data.values())
+
+    plt.figure()
+    plt.bar(months, totals)
+    plt.xlabel("Month")
+    plt.ylabel("Total Expense")
+    plt.title("Monthly Expense Summary")
+    plt.tight_layout()
+    plt.show()
+
 
 def main():
     while True:
@@ -159,6 +207,8 @@ def main():
         elif choice == "5":
             edit_expense()
         elif choice == "6":
+            monthly_summary()
+        elif choice == "7":
             print("Exiting... Bye 👋")
             break
         else:
