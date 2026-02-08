@@ -81,6 +81,68 @@ def total_expense():
         print("Error calculating total:", e)
 
 
+
+def delete_expense():
+    if not DATA_FILE.exists():
+        print("No expenses to delete.")
+        return
+
+    with open(DATA_FILE, "r", encoding="utf-8") as f:
+        rows = list(csv.reader(f))
+
+    header, data = rows[0], rows[1:]
+
+    for i, row in enumerate(data, start=1):
+        print(f"{i}. ₹{row[1]} | {row[2]} | {row[3]}")
+
+    try:
+        choice = int(input("Enter expense number to delete: "))
+        deleted = data.pop(choice - 1)
+
+        with open(DATA_FILE, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(header)
+            writer.writerows(data)
+
+        print("Deleted:", deleted)
+    except:
+        print("Invalid choice")
+
+def edit_expense():
+    if not DATA_FILE.exists():
+        print("No expenses to edit.")
+        return
+
+    with open(DATA_FILE, "r", encoding="utf-8") as f:
+        rows = list(csv.reader(f))
+
+    header, data = rows[0], rows[1:]
+
+    for i, row in enumerate(data, start=1):
+        print(f"{i}. ₹{row[1]} | {row[2]} | {row[3]}")
+
+    try:
+        choice = int(input("Enter expense number to edit: "))
+        expense = data[choice - 1]
+
+        new_amount = input(f"New amount ({expense[1]}): ") or expense[1]
+        new_category = input(f"New category ({expense[2]}): ") or expense[2]
+        new_note = input(f"New note ({expense[3]}): ") or expense[3]
+
+        expense[1] = new_amount
+        expense[2] = new_category
+        expense[3] = new_note
+
+        with open(DATA_FILE, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(header)
+            writer.writerows(data)
+
+        print("Expense updated!")
+    except:
+        print("Invalid choice")
+
+
 def main():
     while True:
         show_menu()
@@ -92,7 +154,11 @@ def main():
             view_expenses()
         elif choice == "3":
             total_expense()
-        elif choice == "4":
+        elif choice == "4": 
+            delete_expense()
+        elif choice == "5":
+            edit_expense()
+        elif choice == "6":
             print("Exiting... Bye 👋")
             break
         else:
